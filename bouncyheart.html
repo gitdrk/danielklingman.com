@@ -90,10 +90,10 @@
         toggleBtn.addEventListener('click', () => {
             if (isPlaying) {
                 mv.pause();
-                toggleBtn.textContent = "Play Animation";
+                toggleBtn.textContent = "On";
             } else {
                 mv.play();
-                toggleBtn.textContent = "Pause Animation";
+                toggleBtn.textContent = "Off";
             }
             isPlaying = !isPlaying;
         });
