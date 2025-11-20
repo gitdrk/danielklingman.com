@@ -54,19 +54,51 @@
 </head>
 <body>
 
-<div class="section">
-    <model-viewer src="/assets/model_Animation_Walking_withSkin(2).glb"
-                  alt="3D Model"
-                  auto-rotate
-                  camera-controls
-                  autoplay
-                  animation-loop
-                  disable-zoom
-                  exposure="1.0"
-                  shadow-intensity="1">
-    </model-viewer>
-</div>
-
+    <div class="section">
+        <model-viewer id="mv"
+                      src="/assets/model_Animation_Walking_withSkin(2).glb"
+                      alt="3D Model"
+                      auto-rotate
+                      camera-controls
+                      animation-loop
+                      disable-zoom
+                      exposure="1.0"
+                      shadow-intensity="1">
+        </model-viewer>
+    
+        <hr style="margin: 25px 0; border: 1px solid #444;">
+    
+        <button id="toggleAnimBtn" style="
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #333;
+            color: #eee;
+            border: 1px solid #555;
+            cursor: pointer;
+            border-radius: 5px;
+        ">
+            Play Animation
+        </button>
+    </div>
+    
+    <script>
+        const mv = document.getElementById('mv');
+        const toggleBtn = document.getElementById('toggleAnimBtn');
+    
+        let isPlaying = false; // start NOT playing
+    
+        toggleBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                mv.pause();
+                toggleBtn.textContent = "Play Animation";
+            } else {
+                mv.play();
+                toggleBtn.textContent = "Pause Animation";
+            }
+            isPlaying = !isPlaying;
+        });
+    </script>
+    
 <!-- <div class="section">
     <h2>Play DOOM (Static WebAssembly)</h2>
     <p>This uses js-dos with a local doom.zip stored in <code>/doom/doom.zip</code>.</p>
