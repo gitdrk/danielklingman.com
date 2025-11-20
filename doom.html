@@ -55,17 +55,6 @@
 <body>
 
 <div class="section">
-    <model-viewer src="/assets/static-heart.glb"
-                  alt="3D Model"
-                  auto-rotate
-                  camera-controls
-                  disable-zoom
-                  exposure="1.0"
-                  shadow-intensity="1">
-    </model-viewer>
-</div>
-
-<!-- <div class="section">
     <h2>Play DOOM (Static WebAssembly)</h2>
     <p>This uses js-dos with a local doom.zip stored in <code>/doom/doom.zip</code>.</p>
 
@@ -75,12 +64,12 @@
         Dos(document.getElementById("doom"), {
             wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js"
         }).ready((fs, main) => {
-            fs.extract("doom/doom.zip").then(() => {
+            fs.extract("assets/doom.zip").then(() => {
                 main(["-c", "cd doom", "-c", "doom.exe"]);
             });
         });
     </script>
-</div> -->
+</div>
 
 </body>
 </html>
