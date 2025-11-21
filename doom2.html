@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Models + DOOM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://js-dos.com/6.22/current/js-dos.js"></script>
+    <link rel="stylesheet" href="https://js-dos.com/6.22/current/js-dos.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #111;
+            color: #eee;
+            text-align: center; /* Centers the button */
+        }
+
+        header {
+            padding: 30px;
+            background: #222;
+            border-bottom: 2px solid #333;
+        }
+
+        h1 { margin: 0; }
+
+        .section {
+            padding: 40px 20px;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .doom-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 30px auto;
+            border: 3px solid #444;
+            background: black;
+            display: block;
+        }
+
+        /* Power Button Styles */
+        #power-btn {
+            background-color: #28a745; /* Green for ON */
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        #power-btn.off {
+            background-color: #dc3545; /* Red for OFF */
+        }
+
+        #power-btn:hover {
+            opacity: 0.9;
+        }
+        
+        /* Placeholder when the game is off */
+        .screen-off {
+            width: 100%;
+            max-width: 800px;
+            height: 500px;
+            margin: 30px auto;
+            border: 3px solid #333;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+
+<div class="section">
+    <button id="power-btn" onclick="togglePower()">Power ON</button>
+
+    <div id="dos-wrapper">
+        <div class="screen-off">SYSTEM OFFLINE</div>
+    </div>
+</div>
+
+<script>
+    let isRunning = false;
+
+    function togglePower() {
+        const wrapper = document.getElementById("dos-wrapper");
+        const btn = document.getElementById("power-btn");
+
+        if (!isRunning) {
+            // --- TURN ON ---
+            
+            // 1. Create the canvas dynamically
+            wrapper.innerHTML = '<canvas id="doom" class="doom-container" style="height: 500px;"></canvas>';
+            
+            // 2. Update Button UI
+            btn.innerText = "Power OFF";
+            btn.classList.add("off"); // Turns button red
+            isRunning = true;
+
+            // 3. Initialize JS-DOS
+            Dos(document.getElementById("doom"), {
+                wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js"
+            }).ready((fs, main) => {
+                fs.extract("assets/doom.zip").then(() => {
+                    main(["-c", "cd doom", "-c", "doom.exe"]);
+                });
+            });
+
+        } else {
+            // --- TURN OFF ---
+            
+            // 1. Remove the canvas (effectively killing the process and sound)
+            wrapper.innerHTML = '<div class="screen-off">SYSTEM OFFLINE</div>';
+            
+            // 2. Update Button UI
+            btn.innerText = "Power ON";
+            btn.classList.remove("off"); // Turns button green
+            isRunning = false;
+        }
+    }
+</script>
+
+</body>
+</html>
