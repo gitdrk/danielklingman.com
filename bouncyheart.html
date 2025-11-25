@@ -50,52 +50,81 @@
             /* background: #000; */
             /* border: 2px solid #333; */
         }
+
+        /* Shared styles for the buttons */
+        .speed-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #eee;
+            border: 1px solid #555;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+    
+        /* Hover effect */
+        .speed-btn:hover {
+            border-color: #888;
+        }
     </style>
 </head>
 <body>
 
+    HTML
+
     <div class="section">
-        <model-viewer id="mv"
-                      src="/assets/model_Animation_Walking_withSkin(2).glb"
-                      alt="3D Model"
-                      auto-rotate
-                      camera-controls
-                      animation-loop
-                      disable-zoom
-                      exposure="1.0"
+        <model-viewer id="mv" 
+                      src="/assets/model_Animation_Walking_withSkin(2).glb" 
+                      alt="3D Model" 
+                      auto-rotate 
+                      camera-controls 
+                      animation-loop 
+                      disable-zoom 
+                      exposure="1.0" 
                       shadow-intensity="1">
         </model-viewer>
     
         <hr style="margin: 25px 0; border: 1px solid #444;">
     
-        <button id="toggleAnimBtn" style="
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #333;
-            color: #eee;
-            border: 1px solid #555;
-            cursor: pointer;
-            border-radius: 5px;
-        ">
-            Play Animation
-        </button>
+        <div id="speed-controls" style="display: flex; gap: 10px;">
+            <div>Cups of Coffee:</div>
+            <button class="speed-btn" data-speed="0" style="background: #333;">Off</button>
+            <button class="speed-btn" data-speed="0.5" style="background: #333;">0 Cups</button>
+            <button class="speed-btn active" data-speed="1" style="background: #555;">1 Cups</button>
+            <button class="speed-btn" data-speed="2" style="background: #333;">2 Cups</button>
+        </div>
     </div>
+    
+    <style>
+
+    </style>
     
     <script>
         const mv = document.getElementById('mv');
-        const toggleBtn = document.getElementById('toggleAnimBtn');
+        const buttons = document.querySelectorAll('.speed-btn');
     
-        let isPlaying = false; // start NOT playing
+        // Function to handle button clicks
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const speed = parseFloat(btn.getAttribute('data-speed'));
     
-        toggleBtn.addEventListener('click', () => {
-            if (isPlaying) {
-                mv.pause();
-                toggleBtn.textContent = "On";
-            } else {
-                mv.play();
-                toggleBtn.textContent = "Off";
-            }
-            isPlaying = !isPlaying;
+                // 1. Handle Animation Logic
+                if (speed === 0) {
+                    mv.pause();
+                } else {
+                    mv.timeScale = speed; // Set the speed
+                    mv.play(); // Ensure it is playing
+                }
+    
+                // 2. Handle Visual "Active" State
+                buttons.forEach(b => {
+                    b.style.background = '#333'; // Reset all to dark
+                    b.classList.remove('active');
+                });
+                
+                btn.style.background = '#555'; // Highlight clicked button
+                btn.classList.add('active');
+            });
         });
     </script>
     
