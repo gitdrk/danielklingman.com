@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookie Cake Neuron Sim</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #050512;
+      color: #f5f5f5;
+      font-family: system-ui, sans-serif;
+    }
+
+    /* UI Overlay Container */
+    #ui-layer {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none; 
+      z-index: 10;
+    }
+
+    /* Info Box */
+    .panel {
+      padding: 10px 14px;
+      background: rgba(20, 20, 40, 0.8);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 13px;
+      pointer-events: auto; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      min-width: 200px;
+    }
+
+    .title {
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #00ffc8;
+    }
+
+    /* Controls */
+    .control-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    button {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      width: 100%;
+    }
+    button:hover { background: #444; }
+    button:active { background: #222; }
+
+    input[type=range] {
+      width: 100%;
+      cursor: pointer;
+      /* CRITICAL CHANGE: This flips the slider axis */
+      /* Left side becomes MAX (100), Right side becomes MIN (0) */
+      direction: rtl; 
+    }
+    
+    label {
+        font-weight: 500;
+        color: #ddd;
+    }
+
+    /* ---- BOTTOM TRACK BAR ---- */
+    #track-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 80px; 
+      background: rgba(10, 10, 30, 0.9);
+      border-top: 1px solid #444;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      padding: 0 20px; 
+      box-sizing: border-box; 
+    }
+
+    /* The target (RIGHT) */
+    #cake-target {
+      position: absolute;
+      right: 20px; 
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+
+    /* The moving marker (STARTS LEFT) */
+    #face-marker {
+      position: absolute;
+      left: 20px; 
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      transition: left 0.1s ease-out; 
+      filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+    }
+
+    /* Visual "Road" line */
+    #track-line {
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, #333, #00ffc8);
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      z-index: -1;
+      opacity: 0.5;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="ui-layer">
+    <div class="panel">
+      <div class="title">Cookie Cake Brain Simulator</div>
+    </div>
+
+    <div class="panel">
+      <div class="control-group">
+        <label for="dist-range">Distance from Cookie Cake</label>
+      </div>
+      <div class="control-group">
+        <span id="dist-val" style="color:#00ffc8; font-weight:bold;">100m</span>
+      </div>
+      <div class="control-group">
+        <input type="range" id="dist-range" min="0" max="100" step="1" value="100">
+      </div>
+      <div class="control-group">
+        <button id="btn-pause">Pause Simulation</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="track-container">
+    <div id="track-line"></div>
+    
+    <div id="face-marker">😐</div>
+    <div id="cake-target">🍪</div>
+  </div>
+
+  <canvas id="neurons"></canvas>
+
+  <script>
+    const canvas = document.getElementById("neurons");
+    const ctx = canvas.getContext("2d");
+
+    // ---- State & Controls ----
+    let simulationSpeed = 0.1; 
+    let isPaused = false;
+    
+    const distRange = document.getElementById('dist-range');
+    const distVal = document.getElementById('dist-val');
+    const btnPause = document.getElementById('btn-pause');
+    const faceMarker = document.getElementById('face-marker');
+
+    // Function to calculate speed based on slider value (100 down to 0)
+    function updateState(sliderValue) {
+      // 1. TEXT UPDATE
+      // Slider is now direct: 100 = 100m, 0 = 0m
+      distVal.innerText = sliderValue + "m";
+
+      // 2. MATH
+      // We need to calculate progress (0.0 to 1.0) based on distance
+      // If Val = 100, Progress = 0.0 (Start)
+      // If Val = 0, Progress = 1.0 (Finish)
+      const progress = (100 - sliderValue) / 100;
+
+      // 3. NEURON SPEED 
+      // Progress 0 (Start) = Slow (0.1)
+      // Progress 1 (End)   = Fast (5.0)
+      const maxSpeed = 5.0;
+      const minSpeed = 0.1;
+      simulationSpeed = minSpeed + (progress * (maxSpeed - minSpeed));
+
+      // 4. FACE POSITION 
+      // Progress 0 => Left side
+      // Progress 1 => Right side
+      const maxLeft = window.innerWidth - 80; 
+      const minLeft = 20; 
+      const pixelPos = minLeft + (progress * (maxLeft - minLeft));
+      faceMarker.style.left = pixelPos + "px";
+    }
+
+    // Initialize (Start at 100)
+    updateState(100);
+
+    distRange.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      updateState(val);
+    });
+
+    window.addEventListener('resize', () => {
+       const val = parseInt(distRange.value);
+       updateState(val);
+    });
+
+    btnPause.addEventListener('click', () => {
+      isPaused = !isPaused;
+      btnPause.innerText = isPaused ? "Resume" : "Pause Simulation";
+      btnPause.style.background = isPaused ? "#522" : "#333";
+    });
+
+    // ---- Resizing Logic ----
+    let prevW = window.innerWidth;
+    let prevH = window.innerHeight;
+
+    function resize() {
+      const newW = window.innerWidth;
+      const newH = window.innerHeight;
+      
+      const scaleX = prevW > 0 ? newW / prevW : 1;
+      const scaleY = prevH > 0 ? newH / prevH : 1;
+
+      canvas.width = newW;
+      canvas.height = newH;
+
+      if (neurons.length > 0) {
+        neurons.forEach(n => { n.x *= scaleX; n.y *= scaleY; });
+        signals.forEach(s => { s.fromX *= scaleX; s.fromY *= scaleY; s.toX *= scaleX; s.toY *= scaleY; });
+      }
+      prevW = newW;
+      prevH = newH;
+      
+      updateState(parseInt(distRange.value));
+    }
+    
+    window.addEventListener("resize", resize);
+
+    // ---- Simulation parameters ----
+    const NUM_NEURONS = 45;
+    const MIN_CONNECTIONS = 2;
+    const MAX_CONNECTIONS = 5;
+
+    const neurons = [];
+    const signals = []; 
+
+    function randBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    // Initialize Neurons
+    for (let i = 0; i < NUM_NEURONS; i++) {
+      neurons.push({
+        x: 0, 
+        y: 0,
+        connections: [],
+        activation: 0,   
+        threshold: 0.9, 
+        refractory: 0,   
+      });
+    }
+
+    resize(); 
+    
+    function randomizePositions() {
+      const margin = 50;
+      for (const n of neurons) {
+        n.x = randBetween(margin, canvas.width - margin);
+        n.y = randBetween(margin, canvas.height - margin);
+      }
+    }
+    randomizePositions();
+
+    // Create Connections
+    for (let i = 0; i < neurons.length; i++) {
+      const n = neurons[i];
+      const numConnections = Math.floor(randBetween(MIN_CONNECTIONS, MAX_CONNECTIONS + 1));
+      while (n.connections.length < numConnections) {
+        const targetIndex = Math.floor(Math.random() * neurons.length);
+        if (targetIndex !== i && !n.connections.includes(targetIndex)) {
+          n.connections.push(targetIndex);
+        }
+      }
+    }
+
+    // Seed activation
+    for (const n of neurons) {
+      n.activation = Math.random() * 0.5;
+    }
+
+    function addSignal(fromIndex, toIndex) {
+      const from = neurons[fromIndex];
+      const to = neurons[toIndex];
+      signals.push({
+        fromIndex,
+        toIndex,
+        t: 0,
+        speed: randBetween(0.01, 0.03),
+        fromX: from.x,
+        fromY: from.y,
+        toX: to.x,
+        toY: to.y,
+      });
+    }
+
+    function step() {
+      if (isPaused) return;
+
+      const dt = 1 / 60;
+      
+      // Update neurons
+      for (let i = 0; i < neurons.length; i++) {
+        const n = neurons[i];
+
+        if (Math.random() < 0.02 * simulationSpeed) {
+          n.activation += randBetween(0.05, 0.2);
+        }
+
+        if (n.refractory > 0) {
+          n.refractory -= dt * simulationSpeed;
+        } else {
+          // Fixed decay for persistence
+          n.activation -= 0.01;
+        }
+
+        if (n.activation < 0) n.activation = 0;
+        if (n.activation > 1.5) n.activation = 1.5;
+
+        // Fire
+        if (n.refractory <= 0 && n.activation >= n.threshold) {
+          n.refractory = 0.4;      
+          n.activation = 1.2;      
+
+          for (const targetIndex of n.connections) {
+            addSignal(i, targetIndex);
+          }
+        }
+      }
+
+      // Update signals
+      for (let i = signals.length - 1; i >= 0; i--) {
+        const s = signals[i];
+        s.t += s.speed * simulationSpeed;
+        if (s.t >= 1) {
+          const target = neurons[s.toIndex];
+          target.activation += randBetween(0.3, 0.6);
+          signals.splice(i, 1);
+        }
+      }
+    }
+
+    function draw() {
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Persistence effect
+      ctx.fillStyle = "rgba(5, 5, 20, 0.05)"; 
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw connections
+      ctx.lineWidth = 1;
+      for (let i = 0; i < neurons.length; i++) {
+        const n = neurons[i];
+        for (const j of n.connections) {
+          const m = neurons[j];
+          ctx.strokeStyle = "rgba(120, 120, 160, 0.15)";
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(m.x, m.y);
+          ctx.stroke();
+        }
+      }
+
+      // Draw signals
+      for (const s of signals) {
+        const x = s.fromX + (s.toX - s.fromX) * s.t;
+        const y = s.fromY + (s.toY - s.fromY) * s.t;
+
+        ctx.beginPath();
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "rgba(0, 255, 255, 1)";
+        ctx.fillStyle = "rgba(200, 255, 255, 1)";
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0; 
+      }
+
+      // Draw neurons
+      for (const n of neurons) {
+        const a = Math.min(1, n.activation);
+        
+        // Brighter/Lighter Color Palette
+        const r = 80 + a * 175;  
+        const g = 140 + a * 115; 
+        const b = 230 + a * 25;  
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`;
+        
+        const radius = 4 + a * 6; 
+        ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      step();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
