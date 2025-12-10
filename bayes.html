@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bayesian Reasoning</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0 auto;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      max-width: 768px;
+    }
+
+    .base-element {
+
+      position: relative;
+      z-index: 3;
+      border: 1px solid black;
+      border-radius: 10px;
+      box-shadow: 1px 2px 10px black;
+    }
+
+    .full-width-card {
+      padding: 1rem;
+      margin: 1rem;
+      text-align: center;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      gap: 1rem;
+      padding: 1rem;
+      padding-bottom: 0rem;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        flex-direction: row;
+      }
+    }
+
+    .panel {
+      flex: 1;
+    }
+
+
+
+    .slider-card {
+      padding: 1rem;
+
+    }
+
+    .header-row,
+    .input-row {
+      display: grid;
+      grid-template-columns: 30% 33% 33%;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid black;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 0.5rem;
+    }
+
+    .w-full {
+      width: 100%;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .border {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+    }
+
+    .posterior-label {
+      font-size: 1.2rem;
+      padding: 1rem;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 1rem;
+      width: 100%;
+    }
+
+    .math-explanation {
+      font-size: 0.85rem;
+      color: #555;
+      padding: 0 1rem 1rem 1rem;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .math-explanation code {
+      background: #f0f0f0;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+
+    .slider-value {
+      font-size: 0.9rem;
+      color: #555;
+      width: 3rem;
+      text-align: left;
+    }
+
+    .event-slider-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+
+    .event-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      background: #ddd;
+      outline: none;
+      border-radius: 4px;
+      min-width: 0;
+    }
+
+    .event-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #2196F3;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+
+    .event-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #2196F3;
+      cursor: pointer;
+      border-radius: 50%;
+      border: none;
+    }
+
+    .event-slider-ticks {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.25rem;
+      padding: 0 2px;
+    }
+
+    .event-tick {
+      position: relative;
+      width: 2px;
+      height: 6px;
+      background: #666;
+    }
+
+    .event-tick-label {
+      position: absolute;
+      top: 8px;
+      font-size: 0.65rem;
+      white-space: nowrap;
+      color: #666;
+    }
+
+    .event-tick:first-child .event-tick-label {
+      left: 0;
+      transform: none;
+    }
+
+    .event-tick:last-child .event-tick-label {
+      right: 0;
+      left: auto;
+      transform: none;
+    }
+
+    .event-tick:not(:first-child):not(:last-child) .event-tick-label {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Transparent card styling */
+    .transparent-card {
+      background: rgba(255, 255, 255, 0.0) !important;
+      padding: 1rem;
+      padding-top: 0rem;
+      padding-bottom: 0rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.0);
+    }
+
+    .image-container {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+
+    }
+
+    .image-container img {
+      display: block;
+    }
+
+    .image-container .arm {
+      position: absolute;
+      right: 38%;
+      top: 42%;
+      transform-origin: calc(90% - 20px) center;
+      transform: rotate(-15deg);
+      transition: transform 0.3s ease-in-out;
+      z-index: 2;
+      background: none;
+      overflow: hidden;
+    }
+
+
+    #prior-label {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .prior-description {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .prior-value-display {
+      display: inline-block;
+      background: #4CAF50;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-top: 0.5rem;
+    }
+
+    .prior-slider-container {
+      position: relative;
+      padding: 2rem 0 1rem 0;
+    }
+
+    .prior-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 8px;
+      background: #ddd;
+      outline: none;
+      border-radius: 4px;
+    }
+
+    .prior-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #4CAF50;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+
+    .prior-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: #4CAF50;
+      cursor: pointer;
+      border-radius: 50%;
+      border: none;
+    }
+
+    .slider-ticks {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+    }
+
+    .tick {
+      position: relative;
+      width: 2px;
+      height: 10px;
+      background: #333;
+    }
+
+    .tick-label {
+      position: absolute;
+      top: 15px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .tick:first-child .tick-label {
+      left: 0;
+      transform: none;
+    }
+
+    .tick:last-child .tick-label {
+      right: 0;
+      left: auto;
+      transform: none;
+    }
+
+    .tick:not(:first-child):not(:last-child) .tick-label {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+
+
+    .bottom-card h2 {
+      text-align: center;
+    }
+
+    /* Responsive Design */
+    /* @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      .row-slider {
+        width: 90px;
+      }
+
+      body {
+        font-size: 16px;
+      }
+
+      .header-row,
+      .input-row {
+        display: grid;
+        grid-template-columns: 26% 37% 37%;
+        gap: 0.5rem;
+        align-items: center;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid black;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      body {
+        font-size: 14px;
+      }
+    } */
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Left Panel -->
+    <div class="panel">
+      <div class="base-element slider-card">
+        <div>
+          <label id="prior-label" class="block mb-2">Prior Probability</label>
+          <p class="prior-description">
+            This represents your baseline belief about the likelihood of meningitis before considering any specific symptoms. 
+            It might be based on local prevalence, patient demographics, or clinical intuition.
+          </p>
+          <div class="prior-slider-container">
+            <input type="range" id="prior" class="prior-slider" min="0" max="4" step="1" value="2" 
+                   oninput="updatePriorValue(this)">
+            <div class="slider-ticks">
+              <div class="tick"><span class="tick-label">Impossible</span></div>
+              <div class="tick"><span class="tick-label">Doubtful</span></div>
+              <div class="tick"><span class="tick-label">Not Sure</span></div>
+              <div class="tick"><span class="tick-label">Likely</span></div>
+              <div class="tick"><span class="tick-label">Certain</span></div>
+            </div>
+          </div>
+          <div class="text-center mt-2">
+            <span class="prior-value-display" id="priorValue">50%</span>
+          </div>
+        </div>
+
+        <div>
+
+          <div class="header-row">
+            <div><strong>Event</strong></div>
+            <div><strong>Likelihood this occurs in a patient with meningitis</strong></div>
+            <div><strong>Likelihood this occurs in a patient without meningitis</strong></div>
+          </div>
+          <div id="eventRows">
+
+            <div class="input-row">
+              <span class="">
+                <img src="./assets/fever.jpg" alt="Fever symptoms" style="max-width: 100%; height: auto; display: block; margin-bottom: 0.5rem;">
+              </span>
+              <div class="event-slider-container">
+                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                  oninput="updateEventSlider(this)">
+                <div class="event-slider-ticks">
+                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                </div>
+              </div>
+              <div class="event-slider-container">
+                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                  oninput="updateEventSlider(this)">
+                <div class="event-slider-ticks">
+                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-row">
+              <span class="">
+                <img src="./assets/neck.jpg" alt="Fever symptoms" style="max-width: 100%; height: auto; display: block; margin-bottom: 0.5rem;">
+              </span>
+              <div class="event-slider-container">
+                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                  oninput="updateEventSlider(this)">
+                <div class="event-slider-ticks">
+                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                </div>
+              </div>
+              <div class="event-slider-container">
+                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                  oninput="updateEventSlider(this)">
+                <div class="event-slider-ticks">
+                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-row">
+              <span class="">
+                <img src="./assets/rash.jpg" alt="Fever symptoms" style="max-width: 100%; height: auto; display: block; margin-bottom: 0.5rem;">
+              </span>
+              <div class="event-slider-container">
+                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                  oninput="updateEventSlider(this)">
+                <div class="event-slider-ticks">
+                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                </div>
+              </div>
+              <div class="event-slider-container">
+                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                  oninput="updateEventSlider(this)">
+                <div class="event-slider-ticks">
+                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="w-full border" onclick="addEventRow()">Add Your Own</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="slider-card">
+
+      <div class="posterior-label base-element" id="">
+        Posterior (Updated probability that the patient has meningitis):
+        <span id="result">50%</span>
+        <div class="math-explanation">
+          Using Bayes' Theorem: <code>P(Meningitis|Evidence) = P(Evidence|Meningitis) × P(Meningitis) / P(Evidence)</code>
+          <br>
+          This combines your prior belief with how likely each symptom is in patients with vs. without meningitis.
+        </div>
+    </div>
+  </div>
+
+  <!-- <div class="base-element slider-card">
+    <h2>Understanding Bayes' Theorem and Applying It to Clinical Reasoning</h2>
+    <p>Bayes' Theorem helps clinicians refine diagnostic impressions as new information becomes available. Here's the
+      basic idea:</p>
+    <ul>
+      <li><strong>Start with a prior probability:</strong> Your initial estimate of how likely a condition is before new
+        data (such as prevalence or a patient’s risk factors).</li>
+      <li><strong>Incorporate new evidence:</strong> Interpret test results, exam findings, or history elements.</li>
+      <li><strong>Update the probability:</strong> Adjust the likelihood of a diagnosis based on how strongly the
+        evidence supports or contradicts it.</li>
+    </ul>
+    <p>This supports sound clinical judgment. For example, when evaluating a possible diagnosis, ask:</p>
+    <ul>
+      <li>"How likely is this condition given the patient’s presentation and baseline risk?"</li>
+      <li>"How likely would these findings be if the patient did <em>not</em> have this condition?"</li>
+    </ul>
+    <p>This approach anchors each decision within a broader pattern of probability rather than treating every symptom or
+      test in isolation.</p>
+    <p>It also highlights an important pitfall: if you set your prior probability to 1 (absolute certainty) or 0
+      (absolute impossibility), no amount of clinical evidence will shift your conclusion. This can lead to diagnostic
+      anchoring and missed conditions.</p>
+    <p>In an era of information overload and variable test accuracy, Bayesian reasoning strengthens clinical
+      decision-making by helping clinicians systematically integrate new evidence and maintain an adaptive,
+      probabilistic view of patient care.</p>
+  </div> -->
+
+  <script>
+    function updatePriorValue(element) {
+      const sliderValues = [0.00001, 25, 50, 75, 99.9999];
+      const index = parseInt(element.value);
+      const value = sliderValues[index];
+      const displayValue = value < 1 ? '~0%' : Math.round(value) + '%';
+      document.getElementById('priorValue').textContent = displayValue;
+      updatePosterior();
+    }
+
+    function updateEventSlider(slider) {
+      updatePosterior();
+    }
+
+    function updateSliderValue(slider) {
+      slider.nextElementSibling.innerText = parseFloat(slider.value).toFixed(0) + '%';
+      updatePosterior();
+    }
+
+    function addEventRow() {
+      const eventRows = document.getElementById('eventRows');
+      const newRow = document.createElement('div');
+      newRow.className = 'input-row';
+      newRow.innerHTML = `
+        <input type="text" class="border" placeholder="Describe event">
+        <div class="event-slider-container">
+          <input type="range" class="event-slider" min="0" max="2" step="1" value="1" oninput="updateEventSlider(this)">
+          <div class="event-slider-ticks">
+            <div class="event-tick"><span class="event-tick-label">Low</span></div>
+            <div class="event-tick"><span class="event-tick-label">Med</span></div>
+            <div class="event-tick"><span class="event-tick-label">High</span></div>
+          </div>
+        </div>
+        <div class="event-slider-container">
+          <input type="range" class="event-slider" min="0" max="2" step="1" value="1" oninput="updateEventSlider(this)">
+          <div class="event-slider-ticks">
+            <div class="event-tick"><span class="event-tick-label">Low</span></div>
+            <div class="event-tick"><span class="event-tick-label">Med</span></div>
+            <div class="event-tick"><span class="event-tick-label">High</span></div>
+          </div>
+        </div>
+      `;
+      eventRows.appendChild(newRow);
+      updatePosterior();
+    }
+
+    function updatePosterior() {
+      const sliderValues = [0.00001, 25, 50, 75, 99.9999];
+      const priorSlider = document.getElementById('prior');
+      const index = parseInt(priorSlider.value);
+      const prior = sliderValues[index] / 100;
+
+      const eventValues = [20, 50, 80];
+      const rows = document.querySelectorAll('#eventRows .input-row');
+      const events = Array.from(rows).map(row => {
+        const slider1 = row.children[1].querySelector('input[type="range"]');
+        const slider2 = row.children[2].querySelector('input[type="range"]');
+        const probDo = eventValues[parseInt(slider1.value)] / 100;
+        const probDont = eventValues[parseInt(slider2.value)] / 100;
+        return { 'P(E|F)': probDo, 'P(E|notF)': probDont };
+      });
+
+      const P_F = prior;
+      const P_notF = 1 - prior;
+
+      let likelihood_given_F = 1;
+      let likelihood_given_notF = 1;
+
+      events.forEach(event => {
+        likelihood_given_F *= event['P(E|F)'];
+        likelihood_given_notF *= event['P(E|notF)'];
+      });
+
+      const P_E = likelihood_given_F * P_F + likelihood_given_notF * P_notF;
+      const P_F_given_E = (likelihood_given_F * P_F) / P_E;
+
+
+      const resultElement = document.getElementById('result');
+      let percentage = (P_F_given_E * 100).toFixed(0); // Ensure this updates dynamically
+
+      resultElement.innerText = `${percentage}%`;
+      resultElement.style.fontWeight = 'bold';
+      resultElement.style.color = `rgb(${(percentage / 100) * 255}, 0, 0)`;
+
+      let lastTime = 0;
+      let growing = true; // Track direction of glow intensity
+
+      // Function to calculate pulse speed based on percentage
+      function calculatePulseSpeed(percentage) {
+        if (percentage <= 50) {
+          return 6000 - ((percentage / 50) * 4000); // 10 -> 30 pulses per min
+        } else {
+          return 2000 - (((percentage - 50) / 49) * 1333); // 30 -> 90 pulses per min
+        }
+      }
+
+      // Function to determine glow size dynamically
+      function calculateGlowSize(percentage) {
+        return percentage <= 50
+          ? 5 + (percentage / 50) * 10  // 5px → 15px
+          : 15 + ((percentage - 50) / 49) * 25;  // 15px → 40px
+      }
+
+      // Function to create a smooth pulsing effect
+      function pulse(time) {
+        // if (!lastTime) lastTime = time;
+        // const deltaTime = time - lastTime;
+
+        // let pulseSpeed = calculatePulseSpeed(percentage);
+        // let maxGlow = calculateGlowSize(percentage);
+
+        // let glowSize = growing ? maxGlow : maxGlow * 0.5; // Shrinks down to half its size
+
+        // resultElement.style.textShadow = `0 0 ${glowSize}px rgb(255, 0, 0)`;
+
+        // if (deltaTime >= pulseSpeed / 2) {
+        //   growing = !growing; // Reverse direction of pulsing glow
+        //   lastTime = time;
+        // }
+
+        requestAnimationFrame(pulse);
+      }
+
+      // Start pulsing with requestAnimationFrame
+      requestAnimationFrame(pulse);
+    }
+
+
+    // Initial calculation
+    updatePosterior();
+  </script>
+</body>
+
+</html>
