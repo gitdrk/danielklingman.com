@@ -120,6 +120,13 @@
       font-size: 40px;
       transition: left 0.1s ease-out; 
       filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+      cursor: grab;
+      user-select: none;
+    }
+    
+    #face-marker:active {
+      cursor: grabbing;
+      transition: none;
     }
 
     /* Visual "Road" line */
@@ -135,6 +142,85 @@
     }
 
     canvas {
+      display: block;
+    }
+    
+    /* Popup Modal */
+    #warranty-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(30, 30, 60, 0.95);
+      border: 2px solid #ff6b9d;
+      border-radius: 12px;
+      padding: 30px;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+      text-align: center;
+      min-width: 320px;
+      animation: popupAppear 0.3s ease-out;
+    }
+    
+    @keyframes popupAppear {
+      from {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+    
+    #warranty-popup.show {
+      display: block;
+    }
+    
+    #warranty-popup h2 {
+      color: #ff6b9d;
+      margin: 0 0 15px 0;
+      font-size: 20px;
+    }
+    
+    #warranty-popup p {
+      color: #f5f5f5;
+      margin: 0 0 20px 0;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    
+    #warranty-link {
+      display: inline-block;
+      background: linear-gradient(135deg, #ff6b9d, #ff8c00);
+      color: white;
+      text-decoration: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 15px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+    }
+    
+    #warranty-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 107, 157, 0.6);
+    }
+    
+    #popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 99;
+      display: none;
+    }
+    
+    #popup-overlay.show {
       display: block;
     }
   </style>
@@ -160,6 +246,32 @@
         <button id="btn-pause">Pause Simulation</button>
       </div>
     </div>
+
+    <div class="panel">
+      <div class="title">Neural Activity</div>
+      <div style="margin-top: 6px; font-size: 12px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>Active Neurons:</span>
+          <span id="active-neurons" style="color:#00ffc8; font-weight:bold;">0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>Signals In Flight:</span>
+          <span id="signals-count" style="color:#ff8c00; font-weight:bold;">0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>Firing Rate:</span>
+          <span id="fire-rate" style="color:#ff6b9d; font-weight:bold;">0/s</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>Simulation Speed:</span>
+          <span id="sim-speed" style="color:#9d88ff; font-weight:bold;">0.1x</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>Avg Activation:</span>
+          <span id="avg-activation" style="color:#70ff70; font-weight:bold;">0%</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="track-container">
@@ -170,6 +282,13 @@
   </div>
 
   <canvas id="neurons"></canvas>
+  
+  <div id="popup-overlay"></div>
+  <div id="warranty-popup">
+    <h2>🚗 Important Notice! 🚗</h2>
+    <p>Click here to extend your car's warranty.<br><strong>Smart people do it.</strong></p>
+    <a id="warranty-link" href="https://x.com" target="_blank">Extend Warranty Now</a>
+  </div>
 
   <script>
     const canvas = document.getElementById("neurons");
@@ -183,7 +302,37 @@
     const distVal = document.getElementById('dist-val');
     const btnPause = document.getElementById('btn-pause');
     const faceMarker = document.getElementById('face-marker');
+    
+    // Metric display elements
+    const activeNeuronsEl = document.getElementById('active-neurons');
+    const signalsCountEl = document.getElementById('signals-count');
+    const fireRateEl = document.getElementById('fire-rate');
+    const simSpeedEl = document.getElementById('sim-speed');
+    const avgActivationEl = document.getElementById('avg-activation');
+    
+    // Metrics tracking
+    let firingEvents = 0;
+    let metricsTimer = 0;
+    let totalFiringCount = 0;
+    let popupShown = false;
+    
+    // Dragging state
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartLeft = 0;
 
+    // Function to calculate distance from pixel position
+    function updateStateFromPixels(pixelPos) {
+      const maxLeft = window.innerWidth - 80;
+      const minLeft = 20;
+      const progress = (pixelPos - minLeft) / (maxLeft - minLeft);
+      const clampedProgress = Math.max(0, Math.min(1, progress));
+      const distance = Math.round(100 - (clampedProgress * 100));
+      
+      distRange.value = distance;
+      updateState(distance);
+    }
+    
     // Function to calculate speed based on slider value (100 down to 0)
     function updateState(sliderValue) {
       // 1. TEXT UPDATE
@@ -202,6 +351,9 @@
       const maxSpeed = 5.0;
       const minSpeed = 0.1;
       simulationSpeed = minSpeed + (progress * (maxSpeed - minSpeed));
+      
+      // Update speed display
+      simSpeedEl.innerText = simulationSpeed.toFixed(2) + "x";
 
       // 4. FACE POSITION 
       // Progress 0 => Left side
@@ -229,6 +381,62 @@
       isPaused = !isPaused;
       btnPause.innerText = isPaused ? "Resume" : "Pause Simulation";
       btnPause.style.background = isPaused ? "#522" : "#333";
+    });
+    
+    // Face dragging functionality
+    faceMarker.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartLeft = parseFloat(faceMarker.style.left) || 20;
+      e.preventDefault();
+    });
+    
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - dragStartX;
+        const newLeft = dragStartLeft + deltaX;
+        const maxLeft = window.innerWidth - 80;
+        const minLeft = 20;
+        const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+        
+        faceMarker.style.left = clampedLeft + 'px';
+        updateStateFromPixels(clampedLeft);
+      }
+    });
+    
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+    
+    // Touch support for mobile
+    faceMarker.addEventListener('touchstart', (e) => {
+      isDragging = true;
+      dragStartX = e.touches[0].clientX;
+      dragStartLeft = parseFloat(faceMarker.style.left) || 20;
+      e.preventDefault();
+    });
+    
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging) {
+        const deltaX = e.touches[0].clientX - dragStartX;
+        const newLeft = dragStartLeft + deltaX;
+        const maxLeft = window.innerWidth - 80;
+        const minLeft = 20;
+        const clampedLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+        
+        faceMarker.style.left = clampedLeft + 'px';
+        updateStateFromPixels(clampedLeft);
+      }
+    });
+    
+    window.addEventListener('touchend', () => {
+      isDragging = false;
+    });
+    
+    // Close popup when clicking overlay
+    document.getElementById('popup-overlay').addEventListener('click', () => {
+      document.getElementById('warranty-popup').classList.remove('show');
+      document.getElementById('popup-overlay').classList.remove('show');
     });
 
     // ---- Resizing Logic ----
@@ -277,7 +485,8 @@
         connections: [],
         activation: 0,   
         threshold: 0.9, 
-        refractory: 0,   
+        refractory: 0,
+        justFired: 0, // Timer for red spark effect
       });
     }
 
@@ -350,11 +559,27 @@
         // Fire
         if (n.refractory <= 0 && n.activation >= n.threshold) {
           n.refractory = 0.4;      
-          n.activation = 1.2;      
+          n.activation = 1.2;
+          n.justFired = 0.15; // Set red spark duration
+          firingEvents++; // Track firing for rate calculation
+          totalFiringCount++;
+          
+          // Show popup after 10 fires
+          if (totalFiringCount === 10 && !popupShown) {
+            document.getElementById('warranty-popup').classList.add('show');
+            document.getElementById('popup-overlay').classList.add('show');
+            popupShown = true;
+          }
 
           for (const targetIndex of n.connections) {
             addSignal(i, targetIndex);
           }
+        }
+        
+        // Decay firing effect
+        if (n.justFired > 0) {
+          n.justFired -= dt * simulationSpeed;
+          if (n.justFired < 0) n.justFired = 0;
         }
       }
 
@@ -367,6 +592,34 @@
           target.activation += randBetween(0.3, 0.6);
           signals.splice(i, 1);
         }
+      }
+      
+      // Update metrics every frame
+      updateMetrics(dt);
+    }
+    
+    function updateMetrics(dt) {
+      metricsTimer += dt;
+      
+      // Update metrics display every 0.1 seconds
+      if (metricsTimer >= 0.1) {
+        // Count active neurons (above threshold or in refractory)
+        const activeCount = neurons.filter(n => n.activation > 0.5 || n.refractory > 0).length;
+        activeNeuronsEl.innerText = activeCount;
+        
+        // Signals in flight
+        signalsCountEl.innerText = signals.length;
+        
+        // Firing rate (events per second)
+        const firingRate = (firingEvents / metricsTimer).toFixed(1);
+        fireRateEl.innerText = firingRate + "/s";
+        firingEvents = 0;
+        metricsTimer = 0;
+        
+        // Average activation across all neurons
+        const totalActivation = neurons.reduce((sum, n) => sum + n.activation, 0);
+        const avgActivation = ((totalActivation / neurons.length) * 100).toFixed(0);
+        avgActivationEl.innerText = avgActivation + "%";
       }
     }
 
@@ -410,17 +663,40 @@
       for (const n of neurons) {
         const a = Math.min(1, n.activation);
         
-        // Brighter/Lighter Color Palette
-        const r = 80 + a * 175;  
-        const g = 140 + a * 115; 
-        const b = 230 + a * 25;  
+        // Check if neuron is firing (red spark effect)
+        let r, g, b;
+        if (n.justFired > 0) {
+          // Red spark effect - interpolate from bright red to normal color
+          const sparkIntensity = n.justFired / 0.15; // 0 to 1
+          const normalR = 80 + a * 175;
+          const normalG = 140 + a * 115;
+          const normalB = 230 + a * 25;
+          
+          r = normalR + (255 - normalR) * sparkIntensity;
+          g = normalG * (1 - sparkIntensity * 0.7);
+          b = normalB * (1 - sparkIntensity * 0.9);
+        } else {
+          // Normal color palette
+          r = 80 + a * 175;  
+          g = 140 + a * 115; 
+          b = 230 + a * 25;
+        }
 
         ctx.beginPath();
         ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`;
         
-        const radius = 4 + a * 6; 
+        const radius = 4 + a * 6;
+        
+        // Add extra glow when firing
+        if (n.justFired > 0) {
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = `rgba(255, 50, 50, ${n.justFired / 0.15})`;
+        }
+        
         ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
         ctx.fill();
+        
+        ctx.shadowBlur = 0;
       }
     }
 

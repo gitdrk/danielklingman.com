@@ -67,7 +67,7 @@
     .header-row,
     .input-row {
       display: grid;
-      grid-template-columns: 30% 33% 33%;
+      grid-template-columns: 26% 28% 28% 14%;
       gap: 0.5rem;
       align-items: center;
       margin-top: 0.5rem;
@@ -95,6 +95,15 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       width: 100%;
+      background: #4CAF50;
+      color: white;
+      padding: 0.5rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .border:hover {
+      background: #45a049;
     }
 
     .posterior-label {
@@ -132,10 +141,25 @@
     .event-slider-container {
       position: relative;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      align-items: center;
       width: 100%;
-      gap: 0.25rem;
+      gap: 0.5rem;
       min-width: 0;
+    }
+
+    .event-slider-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .event-percentage {
+      font-size: 0.8rem;
+      color: #555;
+      min-width: 2.5rem;
+      text-align: left;
     }
 
     .event-slider {
@@ -340,6 +364,23 @@
       transform: translateX(-50%);
     }
 
+    .lr-display {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #2196F3;
+      text-align: center;
+    }
+
+    .lr-explanation {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      background: #f8f8f8;
+      border-radius: 5px;
+      line-height: 1.4;
+    }
+
 
 
     .bottom-card h2 {
@@ -420,9 +461,14 @@
 
           <div class="header-row">
             <div><strong>Event</strong></div>
-            <div><strong>Likelihood this occurs in a patient with meningitis</strong></div>
-            <div><strong>Likelihood this occurs in a patient without meningitis</strong></div>
+            <div><strong>Likelihood in meningitis</strong></div>
+            <div><strong>Likelihood without meningitis</strong></div>
+            <div><strong>Evidence (LR+)</strong></div>
           </div>
+          <p class="lr-explanation">
+            The LR+ tells you how many times more likely this finding is in a patient with meningitis than without.
+            LR+ ≈ 1 = no real diagnostic value; higher numbers = stronger evidence.
+          </p>
           <div id="eventRows">
 
             <div class="input-row">
@@ -430,23 +476,30 @@
                 <img src="./assets/fever.jpg" alt="Fever symptoms" style="max-width: 100%; height: auto; display: block; margin-bottom: 0.5rem;">
               </span>
               <div class="event-slider-container">
-                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
-                  oninput="updateEventSlider(this)">
-                <div class="event-slider-ticks">
-                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
-                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
-                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                <div class="event-slider-wrapper">
+                  <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                    oninput="updateEventSlider(this)">
+                  <div class="event-slider-ticks">
+                    <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                    <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                    <div class="event-tick"><span class="event-tick-label">High</span></div>
+                  </div>
                 </div>
+                <span class="event-percentage">50%</span>
               </div>
               <div class="event-slider-container">
-                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
-                  oninput="updateEventSlider(this)">
-                <div class="event-slider-ticks">
-                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
-                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
-                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                <div class="event-slider-wrapper">
+                  <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                    oninput="updateEventSlider(this)">
+                  <div class="event-slider-ticks">
+                    <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                    <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                    <div class="event-tick"><span class="event-tick-label">High</span></div>
+                  </div>
                 </div>
+                <span class="event-percentage">50%</span>
               </div>
+              <div class="lr-display">LR+: 1.0</div>
             </div>
 
             <div class="input-row">
@@ -454,23 +507,30 @@
                 <img src="./assets/neck.jpg" alt="Fever symptoms" style="max-width: 100%; height: auto; display: block; margin-bottom: 0.5rem;">
               </span>
               <div class="event-slider-container">
-                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
-                  oninput="updateEventSlider(this)">
-                <div class="event-slider-ticks">
-                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
-                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
-                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                <div class="event-slider-wrapper">
+                  <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                    oninput="updateEventSlider(this)">
+                  <div class="event-slider-ticks">
+                    <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                    <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                    <div class="event-tick"><span class="event-tick-label">High</span></div>
+                  </div>
                 </div>
+                <span class="event-percentage">50%</span>
               </div>
               <div class="event-slider-container">
-                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
-                  oninput="updateEventSlider(this)">
-                <div class="event-slider-ticks">
-                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
-                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
-                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                <div class="event-slider-wrapper">
+                  <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                    oninput="updateEventSlider(this)">
+                  <div class="event-slider-ticks">
+                    <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                    <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                    <div class="event-tick"><span class="event-tick-label">High</span></div>
+                  </div>
                 </div>
+                <span class="event-percentage">50%</span>
               </div>
+              <div class="lr-display">LR+: 1.0</div>
             </div>
 
             <div class="input-row">
@@ -478,23 +538,30 @@
                 <img src="./assets/rash.jpg" alt="Fever symptoms" style="max-width: 100%; height: auto; display: block; margin-bottom: 0.5rem;">
               </span>
               <div class="event-slider-container">
-                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
-                  oninput="updateEventSlider(this)">
-                <div class="event-slider-ticks">
-                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
-                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
-                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                <div class="event-slider-wrapper">
+                  <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                    oninput="updateEventSlider(this)">
+                  <div class="event-slider-ticks">
+                    <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                    <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                    <div class="event-tick"><span class="event-tick-label">High</span></div>
+                  </div>
                 </div>
+                <span class="event-percentage">50%</span>
               </div>
               <div class="event-slider-container">
-                <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
-                  oninput="updateEventSlider(this)">
-                <div class="event-slider-ticks">
-                  <div class="event-tick"><span class="event-tick-label">Low</span></div>
-                  <div class="event-tick"><span class="event-tick-label">Med</span></div>
-                  <div class="event-tick"><span class="event-tick-label">High</span></div>
+                <div class="event-slider-wrapper">
+                  <input type="range" class="event-slider" min="0" max="2" step="1" value="1"
+                    oninput="updateEventSlider(this)">
+                  <div class="event-slider-ticks">
+                    <div class="event-tick"><span class="event-tick-label">Low</span></div>
+                    <div class="event-tick"><span class="event-tick-label">Med</span></div>
+                    <div class="event-tick"><span class="event-tick-label">High</span></div>
+                  </div>
                 </div>
+                <span class="event-percentage">50%</span>
               </div>
+              <div class="lr-display">LR+: 1.0</div>
             </div>
           </div>
         </div>
@@ -566,23 +633,30 @@
       const newRow = document.createElement('div');
       newRow.className = 'input-row';
       newRow.innerHTML = `
-        <input type="text" class="border" placeholder="Describe event">
+        <input type="text" placeholder="Describe event" style="border: 1px solid #ccc; border-radius: 4px; width: 100%; padding: 0.5rem;">
         <div class="event-slider-container">
-          <input type="range" class="event-slider" min="0" max="2" step="1" value="1" oninput="updateEventSlider(this)">
-          <div class="event-slider-ticks">
-            <div class="event-tick"><span class="event-tick-label">Low</span></div>
-            <div class="event-tick"><span class="event-tick-label">Med</span></div>
-            <div class="event-tick"><span class="event-tick-label">High</span></div>
+          <div class="event-slider-wrapper">
+            <input type="range" class="event-slider" min="0" max="2" step="1" value="1" oninput="updateEventSlider(this)">
+            <div class="event-slider-ticks">
+              <div class="event-tick"><span class="event-tick-label">Low</span></div>
+              <div class="event-tick"><span class="event-tick-label">Med</span></div>
+              <div class="event-tick"><span class="event-tick-label">High</span></div>
+            </div>
           </div>
+          <span class="event-percentage">50%</span>
         </div>
         <div class="event-slider-container">
-          <input type="range" class="event-slider" min="0" max="2" step="1" value="1" oninput="updateEventSlider(this)">
-          <div class="event-slider-ticks">
-            <div class="event-tick"><span class="event-tick-label">Low</span></div>
-            <div class="event-tick"><span class="event-tick-label">Med</span></div>
-            <div class="event-tick"><span class="event-tick-label">High</span></div>
+          <div class="event-slider-wrapper">
+            <input type="range" class="event-slider" min="0" max="2" step="1" value="1" oninput="updateEventSlider(this)">
+            <div class="event-slider-ticks">
+              <div class="event-tick"><span class="event-tick-label">Low</span></div>
+              <div class="event-tick"><span class="event-tick-label">Med</span></div>
+              <div class="event-tick"><span class="event-tick-label">High</span></div>
+            </div>
           </div>
+          <span class="event-percentage">50%</span>
         </div>
+        <div class="lr-display">LR+: 1.0</div>
       `;
       eventRows.appendChild(newRow);
       updatePosterior();
@@ -601,7 +675,29 @@
         const slider2 = row.children[2].querySelector('input[type="range"]');
         const probDo = eventValues[parseInt(slider1.value)] / 100;
         const probDont = eventValues[parseInt(slider2.value)] / 100;
-        return { 'P(E|F)': probDo, 'P(E|notF)': probDont };
+        
+        // Update percentage displays
+        const percentage1 = row.children[1].querySelector('.event-percentage');
+        const percentage2 = row.children[2].querySelector('.event-percentage');
+        if (percentage1) percentage1.textContent = eventValues[parseInt(slider1.value)] + '%';
+        if (percentage2) percentage2.textContent = eventValues[parseInt(slider2.value)] + '%';
+        
+        // Compute LR+
+        let lrPlus;
+        if (probDont === 0) {
+          lrPlus = Infinity;
+        } else {
+          lrPlus = probDo / probDont;
+        }
+
+        // Write LR+ into the row if an .lr-display element exists
+        const lrDisplay = row.querySelector('.lr-display');
+        if (lrDisplay) {
+          const text = lrPlus === Infinity ? 'LR+: ∞' : `LR+: ${lrPlus.toFixed(2)}`;
+          lrDisplay.textContent = text;
+        }
+
+        return { 'P(E|F)': probDo, 'P(E|notF)': probDont, lrPlus };
       });
 
       const P_F = prior;
